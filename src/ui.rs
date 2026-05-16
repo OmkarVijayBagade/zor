@@ -67,6 +67,7 @@ fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, selected: usize) {
         "[5] Fire (working)",
         "[6] Rain (working)",
         "[7] Swarm (working)",
+        "[8] Circuit (working)",
     ];
 
     let menu_items: Vec<ListItem> = items
@@ -91,7 +92,7 @@ fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, selected: usize) {
 
 fn draw_footer(f: &mut Frame, area: ratatui::layout::Rect) {
     let tips = Line::from(vec![
-        Span::styled("1-7", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        Span::styled("1-8", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         Span::raw("/"),
         Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         Span::raw(" launch  "),
