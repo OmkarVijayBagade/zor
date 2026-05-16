@@ -5,3 +5,4 @@ pub mod wave;
 pub mod snake;
 pub mod fire;
 pub mod rain;
+pub mod swarm;
