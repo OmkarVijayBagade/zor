@@ -3,3 +3,8 @@ pub mod starfield;
 pub mod matrix;
 pub mod wave;
 pub mod snake;
+pub mod fire;
+pub mod rain;
+pub mod swarm;
+pub mod circuit;
+pub mod void;

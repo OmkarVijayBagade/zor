@@ -1,7 +1,7 @@
 use crate::animations::starfield::Starfield;
 use crate::animations::animation_trait::Animation;
 
-const MENU_ITEMS: usize = 4;
+const MENU_ITEMS: usize = 9;
 
 pub enum AppMode {
     Menu { selected: usize },
@@ -60,6 +60,11 @@ impl App {
             1 => Box::new(crate::animations::matrix::Matrix::new()),
             2 => Box::new(crate::animations::wave::Wave::new()),
             3 => Box::new(crate::animations::snake::Snake::new()),
+            4 => Box::new(crate::animations::fire::Fire::new()),
+            5 => Box::new(crate::animations::rain::Rain::new()),
+            6 => Box::new(crate::animations::swarm::Swarm::new()),
+            7 => Box::new(crate::animations::circuit::Circuit::new()),
+            8 => Box::new(crate::animations::void::Void::new()),
             _ => Box::new(Starfield::new()),
         };
 

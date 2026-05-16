@@ -47,6 +47,10 @@ fn main() -> Result<(), io::Error> {
                                 KeyCode::Up | KeyCode::Char('k') => app.select_previous(),
                                 KeyCode::Down | KeyCode::Char('j') => app.select_next(),
                                 KeyCode::Enter => app.launch_selected(),
+                                KeyCode::Char(c) if c >= '1' && c <= '9' => {
+                                    let idx = c.to_digit(10).unwrap() as usize - 1;
+                                    app.select_index(idx);
+                                }
                                 _ => {}
                             }
                         }
@@ -65,9 +69,8 @@ fn main() -> Result<(), io::Error> {
                             MouseEventKind::Down(_) => {
                                 let row = mouse.row as usize;
                                 let item_index = row.saturating_sub(MENU_LIST_START_ROW);
-                                if item_index < 4 {
+                                if item_index < 9 {
                                     app.select_index(item_index);
-                                    app.launch_selected();
                                 }
                             }
                             _ => {}
