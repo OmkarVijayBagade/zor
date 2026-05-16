@@ -91,7 +91,9 @@ fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, selected: usize) {
 fn draw_footer(f: &mut Frame, area: ratatui::layout::Rect) {
     let tips = Line::from(vec![
         Span::styled("1-6", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        Span::raw(" select  "),
+        Span::raw("/"),
+        Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        Span::raw(" launch  "),
         Span::styled("↑↓", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         Span::raw(" navigate  "),
         Span::styled("q", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),

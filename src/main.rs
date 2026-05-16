@@ -50,7 +50,6 @@ fn main() -> Result<(), io::Error> {
                                 KeyCode::Char(c) if c >= '1' && c <= '6' => {
                                     let idx = c.to_digit(10).unwrap() as usize - 1;
                                     app.select_index(idx);
-                                    app.launch_selected();
                                 }
                                 _ => {}
                             }
@@ -72,7 +71,6 @@ fn main() -> Result<(), io::Error> {
                                 let item_index = row.saturating_sub(MENU_LIST_START_ROW);
                                 if item_index < 6 {
                                     app.select_index(item_index);
-                                    app.launch_selected();
                                 }
                             }
                             _ => {}
