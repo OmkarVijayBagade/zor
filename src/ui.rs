@@ -20,7 +20,7 @@ fn draw_menu(f: &mut Frame, selected: usize) {
         .constraints([
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Length(9),
+            Constraint::Length(10),
             Constraint::Length(3),
         ])
         .split(f.size());
@@ -60,11 +60,12 @@ fn draw_description(f: &mut Frame, area: ratatui::layout::Rect) {
 
 fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, selected: usize) {
     let items = vec![
-        "Starfield (working)",
-        "Matrix (working)",
-        "Wave (working)",
-        "Snake (working)",
-        "Fire (working)",
+        "[1] Starfield (working)",
+        "[2] Matrix (working)",
+        "[3] Wave (working)",
+        "[4] Snake (working)",
+        "[5] Fire (working)",
+        "[6] Rain (working)",
     ];
 
     let menu_items: Vec<ListItem> = items
@@ -89,10 +90,10 @@ fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, selected: usize) {
 
 fn draw_footer(f: &mut Frame, area: ratatui::layout::Rect) {
     let tips = Line::from(vec![
+        Span::styled("1-6", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+        Span::raw(" select  "),
         Span::styled("↑↓", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         Span::raw(" navigate  "),
-        Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        Span::raw(" select  "),
         Span::styled("q", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
         Span::raw(" quit"),
     ]);
