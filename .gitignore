@@ -1,0 +1,12 @@
+# Rust build artifacts
+/target/
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
