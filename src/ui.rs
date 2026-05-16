@@ -20,7 +20,7 @@ fn draw_menu(f: &mut Frame, selected: usize) {
         .constraints([
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Length(8),
+            Constraint::Length(9),
             Constraint::Length(3),
         ])
         .split(f.size());
@@ -64,6 +64,7 @@ fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, selected: usize) {
         "Matrix (working)",
         "Wave (working)",
         "Snake (working)",
+        "Fire (working)",
     ];
 
     let menu_items: Vec<ListItem> = items

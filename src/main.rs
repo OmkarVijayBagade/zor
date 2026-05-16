@@ -65,7 +65,7 @@ fn main() -> Result<(), io::Error> {
                             MouseEventKind::Down(_) => {
                                 let row = mouse.row as usize;
                                 let item_index = row.saturating_sub(MENU_LIST_START_ROW);
-                                if item_index < 4 {
+                                if item_index < 5 {
                                     app.select_index(item_index);
                                     app.launch_selected();
                                 }
