@@ -1,7 +1,7 @@
 use std::io;
 use std::time::{Duration, Instant};
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseEventKind},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -15,8 +15,7 @@ mod ui;
 mod animations;
 
 use crate::app::App;
-
-const MENU_LIST_START_ROW: usize = 7;
+use crate::app::InputMode;
 
 fn main() -> Result<(), io::Error> {
     enable_raw_mode()?;
@@ -38,49 +37,23 @@ fn main() -> Result<(), io::Error> {
             .unwrap_or_else(|| Duration::from_secs(0));
 
         if event::poll(timeout)? {
-            match event::read()? {
-                Event::Key(key) => {
-                    match &mut app.mode {
-                        crate::app::AppMode::Menu { .. } => {
-                            match key.code {
-                                KeyCode::Char('q') => running = false,
-                                KeyCode::Up | KeyCode::Char('k') => app.select_previous(),
-                                KeyCode::Down | KeyCode::Char('j') => app.select_next(),
-                                KeyCode::Enter => app.launch_selected(),
-                                KeyCode::Char(c) if c >= '1' && c <= '9' => {
-                                    let idx = c.to_digit(10).unwrap() as usize - 1;
-                                    app.select_index(idx);
-                                }
-                                _ => {}
-                            }
-                        }
-                        crate::app::AppMode::Running(ref mut anim) => {
-                            if !anim.handle_input(Event::Key(key)) {
-                                app.mode = crate::app::AppMode::Menu { selected: 0 };
+            if let Event::Key(key) = event::read()? {
+                match &mut app.mode {
+                    crate::app::AppMode::Menu(state) => {
+                        if state.input_mode == InputMode::Normal && key.code == KeyCode::Char('q') {
+                            running = false;
+                        } else {
+                            if let Some(idx) = app.handle_key(key.code) {
+                                app.launch_animation(idx);
                             }
                         }
                     }
-                }
-                Event::Mouse(mouse) => {
-                    if let crate::app::AppMode::Menu { .. } = app.mode {
-                        match mouse.kind {
-                            MouseEventKind::ScrollUp => app.select_previous(),
-                            MouseEventKind::ScrollDown => app.select_next(),
-                            MouseEventKind::Down(_) => {
-                                let row = mouse.row as usize;
-                                let item_index = row.saturating_sub(MENU_LIST_START_ROW);
-                                if item_index < 9 {
-                                    app.select_index(item_index);
-                                }
-                            }
-                            _ => {}
+                    crate::app::AppMode::Running(ref mut anim) => {
+                        if !anim.handle_input(Event::Key(key)) {
+                            app.return_to_menu();
                         }
                     }
                 }
-                Event::Resize(width, height) => {
-                    app.resize(width, height);
-                }
-                _ => {}
             }
         }
 
