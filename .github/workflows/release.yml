@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build and Release
+    name: Build
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -26,26 +26,43 @@ jobs:
             binary_name: zor-macos-arm64
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Add target
-        run: rustup target add ${{ matrix.target }}
+      - run: rustup target add ${{ matrix.target }}
 
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target }}
 
       - name: Rename binary
         run: |
           cp target/${{ matrix.target }}/release/zor ${{ matrix.binary_name }}
           chmod +x ${{ matrix.binary_name }}
 
-      - name: Upload Release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: ${{ matrix.binary_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Display files
+        run: ls -R
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.binary_name }}
+          files: |
+            zor-linux-x86_64/zor-linux-x86_64
+            zor-macos-x86_64/zor-macos-x86_64
+            zor-macos-arm64/zor-macos-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
