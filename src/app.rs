@@ -125,6 +125,14 @@ impl App {
                                 state.input_mode = InputMode::Number;
                                 state.number_buffer.clear();
                                 state.number_buffer.push(c);
+                                if let Ok(num) = state.number_buffer.parse::<usize>() {
+                                    if num >= 1 && num <= state.items.len() {
+                                        let target = num - 1;
+                                        if let Some(pos) = state.filtered_indices.iter().position(|&i| i == target) {
+                                            state.selected_index = pos;
+                                        }
+                                    }
+                                }
                             }
                             _ => {}
                         }
