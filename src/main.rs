@@ -1,7 +1,7 @@
 use std::io;
 use std::time::{Duration, Instant};
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, MouseEventKind},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -16,8 +16,6 @@ mod animations;
 
 use crate::app::App;
 use crate::app::InputMode;
-
-const MENU_LIST_START_ROW: usize = 7;
 
 fn main() -> Result<(), io::Error> {
     enable_raw_mode()?;
@@ -39,53 +37,23 @@ fn main() -> Result<(), io::Error> {
             .unwrap_or_else(|| Duration::from_secs(0));
 
         if event::poll(timeout)? {
-            match event::read()? {
-                Event::Key(key) => {
-                    match &mut app.mode {
-                        crate::app::AppMode::Menu(state) => {
-                            if state.input_mode == InputMode::Normal && key.code == KeyCode::Char('q') {
-                                running = false;
-                            } else {
-                                app.handle_key(key.code);
-                            }
-                        }
-                        crate::app::AppMode::Running(ref mut anim) => {
-                            if !anim.handle_input(Event::Key(key)) {
-                                app.return_to_menu();
+            if let Event::Key(key) = event::read()? {
+                match &mut app.mode {
+                    crate::app::AppMode::Menu(state) => {
+                        if state.input_mode == InputMode::Normal && key.code == KeyCode::Char('q') {
+                            running = false;
+                        } else {
+                            if let Some(idx) = app.handle_key(key.code) {
+                                app.launch_animation(idx);
                             }
                         }
                     }
-                }
-                Event::Mouse(mouse) => {
-                    if let crate::app::AppMode::Menu(state) = &mut app.mode {
-                        if state.input_mode == InputMode::Normal {
-                            match mouse.kind {
-                                MouseEventKind::ScrollUp => {
-                                    if !state.filtered_indices.is_empty() {
-                                        state.selected_index = state.selected_index.saturating_sub(1);
-                                    }
-                                }
-                                MouseEventKind::ScrollDown => {
-                                    if !state.filtered_indices.is_empty() {
-                                        state.selected_index = (state.selected_index + 1).min(state.filtered_indices.len().saturating_sub(1));
-                                    }
-                                }
-                                MouseEventKind::Down(_) => {
-                                    let row = mouse.row as usize;
-                                    let item_index = row.saturating_sub(MENU_LIST_START_ROW);
-                                    if item_index < state.filtered_indices.len() {
-                                        state.selected_index = item_index;
-                                    }
-                                }
-                                _ => {}
-                            }
+                    crate::app::AppMode::Running(ref mut anim) => {
+                        if !anim.handle_input(Event::Key(key)) {
+                            app.return_to_menu();
                         }
                     }
                 }
-                Event::Resize(width, height) => {
-                    app.resize(width, height);
-                }
-                _ => {}
             }
         }
 

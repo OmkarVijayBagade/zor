@@ -154,7 +154,7 @@ fn draw_footer(f: &mut Frame, area: ratatui::layout::Rect, input_mode: &InputMod
             Span::raw(" launch"),
         ]),
         InputMode::Normal => Line::from(vec![
-            Span::styled("1-10", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            Span::styled("1-11", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
             Span::raw("/"),
             Span::styled("Enter", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
             Span::raw(" launch  "),
