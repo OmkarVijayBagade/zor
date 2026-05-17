@@ -104,26 +104,39 @@ fn draw_number_buffer(f: &mut Frame, area: ratatui::layout::Rect, buffer: &str) 
 }
 
 fn draw_menu_list(f: &mut Frame, area: ratatui::layout::Rect, state: &MenuState) {
-    let menu_items: Vec<ListItem> = state.filtered_indices.iter()
-        .map(|&idx| {
-            let label = format!("[{}] {}", idx + 1, state.items[idx]);
-            ListItem::new(label)
-        })
-        .collect();
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(area);
 
-    let mut list_state = ListState::default();
-    list_state.select(Some(state.selected_index));
+    let mid = state.filtered_indices.len() / 2 + state.filtered_indices.len() % 2;
+    let left_indices: Vec<&usize> = state.filtered_indices.iter().take(mid).collect();
+    let right_indices: Vec<&usize> = state.filtered_indices.iter().skip(mid).collect();
 
-    let menu = List::new(menu_items)
+    let left_items: Vec<ListItem> = left_indices.iter().map(|&&idx| ListItem::new(format!("[{}] {}", idx + 1, state.items[idx]))).collect();
+    let right_items: Vec<ListItem> = right_indices.iter().map(|&&idx| ListItem::new(format!("[{}] {}", idx + 1, state.items[idx]))).collect();
+
+    let mut left_state = ListState::default();
+    let mut right_state = ListState::default();
+
+    if state.selected_index < mid {
+        left_state.select(Some(state.selected_index));
+    } else {
+        right_state.select(Some(state.selected_index.saturating_sub(mid)));
+    }
+
+    let highlight = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+    let left_list = List::new(left_items)
         .block(Block::default().borders(Borders::ALL).title(" Animations "))
-        .highlight_style(
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )
+        .highlight_style(highlight)
+        .highlight_symbol(">> ");
+    let right_list = List::new(right_items)
+        .block(Block::default().borders(Borders::ALL))
+        .highlight_style(highlight)
         .highlight_symbol(">> ");
 
-    f.render_stateful_widget(menu, area, &mut list_state);
+    f.render_stateful_widget(left_list, chunks[0], &mut left_state);
+    f.render_stateful_widget(right_list, chunks[1], &mut right_state);
 }
 
 fn draw_footer(f: &mut Frame, area: ratatui::layout::Rect, input_mode: &InputMode) {

@@ -20,16 +20,16 @@ pub struct MenuState {
 impl MenuState {
     fn new() -> Self {
         let items = vec![
-            "Starfield (working)".to_string(),
-            "Matrix (working)".to_string(),
-            "Wave (working)".to_string(),
-            "Snake (working)".to_string(),
-            "Fire (working)".to_string(),
-            "Rain (working)".to_string(),
-            "Swarm (working)".to_string(),
-            "Circuit (working)".to_string(),
-            "Void (working)".to_string(),
-            "Flux (working)".to_string(),
+            "Starfield".to_string(),
+            "Matrix".to_string(),
+            "Wave".to_string(),
+            "Snake".to_string(),
+            "Fire".to_string(),
+            "Rain".to_string(),
+            "Swarm".to_string(),
+            "Circuit".to_string(),
+            "Void".to_string(),
+            "Flux".to_string(),
         ];
         MenuState {
             selected_index: 0,
@@ -129,18 +129,22 @@ impl App {
                     InputMode::Number => {
                         match key {
                             crossterm::event::KeyCode::Char(c) if c.is_ascii_digit() => {
-                                state.number_buffer.push(c);
+                                if state.number_buffer.len() < 2 {
+                                    state.number_buffer.push(c);
+                                }
                             }
                             crossterm::event::KeyCode::Enter => {
-                                let anim_idx = state.number_buffer.parse::<usize>().ok().and_then(|idx| {
-                                    if idx >= 1 && idx <= state.items.len() {
-                                        let target = idx - 1;
-                                        state.filtered_indices.iter().position(|&i| i == target).map(|_| target)
+                                let target = state.number_buffer.parse::<usize>().ok().and_then(|num| {
+                                    if num >= 1 && num <= state.items.len() {
+                                        let idx = num - 1;
+                                        state.filtered_indices.iter().position(|&i| i == idx).map(|pos| (pos, idx))
                                     } else {
                                         None
                                     }
                                 });
-                                if let Some(anim_idx) = anim_idx {
+                                
+                                if let Some((pos, anim_idx)) = target {
+                                    state.selected_index = pos;
                                     let mut new_anim: Box<dyn Animation> = match anim_idx {
                                         0 => Box::new(Starfield::new()),
                                         1 => Box::new(crate::animations::matrix::Matrix::new()),
@@ -151,6 +155,7 @@ impl App {
                                         6 => Box::new(crate::animations::swarm::Swarm::new()),
                                         7 => Box::new(crate::animations::circuit::Circuit::new()),
                                         8 => Box::new(crate::animations::void::Void::new()),
+                                        9 => Box::new(crate::animations::flux::Flux::new()),
                                         _ => Box::new(Starfield::new()),
                                     };
                                     let size = crossterm::terminal::size().unwrap_or((80, 24));
@@ -161,7 +166,7 @@ impl App {
                                     state.input_mode = InputMode::Normal;
                                 }
                             }
-                            crossterm::event::KeyCode::Esc => {
+                            crossterm::event::KeyCode::Esc | crossterm::event::KeyCode::Backspace => {
                                 state.number_buffer.clear();
                                 state.input_mode = InputMode::Normal;
                             }

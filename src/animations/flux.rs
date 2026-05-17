@@ -67,9 +67,9 @@ impl Animation for Flux {
         if self.width == 0 || self.height == 0 { return; }
         if self.is_paused { self.pause_timer -= dt; if self.pause_timer <= 0.0 { self.reset(); } return; }
         self.tick_accumulator += dt;
-        if self.tick_accumulator < 0.08 { return; }
-        self.tick_accumulator -= 0.08;
-        if self.filled_count as f32 / self.total_cells as f32 >= 0.85 { self.is_paused = true; self.pause_timer = 2.0; return; }
+        if self.tick_accumulator < 0.04 { return; }
+        self.tick_accumulator -= 0.04;
+        if self.filled_count as f32 / self.total_cells as f32 >= 0.40 { self.is_paused = true; self.pause_timer = 1.5; return; }
 
         let mut i = 0;
         while i < self.walkers.len() {
