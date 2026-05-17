@@ -8,3 +8,4 @@ pub mod rain;
 pub mod swarm;
 pub mod circuit;
 pub mod void;
+pub mod flux;

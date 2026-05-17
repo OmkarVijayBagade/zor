@@ -1,10 +1,49 @@
 use crate::animations::starfield::Starfield;
 use crate::animations::animation_trait::Animation;
 
-const MENU_ITEMS: usize = 9;
+#[derive(PartialEq)]
+pub enum InputMode {
+    Normal,
+    Search,
+    Number,
+}
+
+pub struct MenuState {
+    pub selected_index: usize,
+    pub input_mode: InputMode,
+    pub items: Vec<String>,
+    pub filtered_indices: Vec<usize>,
+    pub search_query: String,
+    pub number_buffer: String,
+}
+
+impl MenuState {
+    fn new() -> Self {
+        let items = vec![
+            "Starfield (working)".to_string(),
+            "Matrix (working)".to_string(),
+            "Wave (working)".to_string(),
+            "Snake (working)".to_string(),
+            "Fire (working)".to_string(),
+            "Rain (working)".to_string(),
+            "Swarm (working)".to_string(),
+            "Circuit (working)".to_string(),
+            "Void (working)".to_string(),
+            "Flux (working)".to_string(),
+        ];
+        MenuState {
+            selected_index: 0,
+            input_mode: InputMode::Normal,
+            filtered_indices: (0..items.len()).collect(),
+            search_query: String::new(),
+            number_buffer: String::new(),
+            items,
+        }
+    }
+}
 
 pub enum AppMode {
-    Menu { selected: usize },
+    Menu(MenuState),
     Running(Box<dyn Animation>),
 }
 
@@ -15,7 +54,7 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         App {
-            mode: AppMode::Menu { selected: 0 },
+            mode: AppMode::Menu(MenuState::new()),
         }
     }
 
@@ -31,31 +70,162 @@ impl App {
         }
     }
 
-    pub fn select_next(&mut self) {
-        if let AppMode::Menu { selected } = &mut self.mode {
-            *selected = (*selected + 1).min(MENU_ITEMS - 1);
+    fn update_filter(&mut self) {
+        if let AppMode::Menu(state) = &mut self.mode {
+            let query = state.search_query.to_lowercase();
+            state.filtered_indices = state.items.iter().enumerate()
+                .filter(|(_, item)| item.to_lowercase().contains(&query))
+                .map(|(i, _)| i)
+                .collect();
+            if !state.filtered_indices.is_empty() {
+                state.selected_index = 0;
+            }
         }
     }
 
-    pub fn select_previous(&mut self) {
-        if let AppMode::Menu { selected } = &mut self.mode {
-            *selected = selected.saturating_sub(1);
-        }
-    }
-
-    pub fn select_index(&mut self, index: usize) {
-        if let AppMode::Menu { selected } = &mut self.mode {
-            *selected = index.min(MENU_ITEMS - 1);
+    pub fn handle_key(&mut self, key: crossterm::event::KeyCode) {
+        match &mut self.mode {
+            AppMode::Menu(state) => {
+                match state.input_mode {
+                    InputMode::Normal => {
+                        match key {
+                            crossterm::event::KeyCode::Up => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = state.selected_index.saturating_sub(1);
+                                }
+                            }
+                            crossterm::event::KeyCode::Down => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = (state.selected_index + 1).min(state.filtered_indices.len().saturating_sub(1));
+                                }
+                            }
+                            crossterm::event::KeyCode::Char('k') => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = state.selected_index.saturating_sub(1);
+                                }
+                            }
+                            crossterm::event::KeyCode::Char('j') => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = (state.selected_index + 1).min(state.filtered_indices.len().saturating_sub(1));
+                                }
+                            }
+                            crossterm::event::KeyCode::Enter => {
+                                self.launch_selected();
+                            }
+                            crossterm::event::KeyCode::Char('/') => {
+                                state.input_mode = InputMode::Search;
+                                state.search_query.clear();
+                                state.filtered_indices = (0..state.items.len()).collect();
+                                state.selected_index = 0;
+                            }
+                            crossterm::event::KeyCode::Char(c) if c.is_ascii_digit() => {
+                                state.input_mode = InputMode::Number;
+                                state.number_buffer.clear();
+                                state.number_buffer.push(c);
+                            }
+                            _ => {}
+                        }
+                    }
+                    InputMode::Number => {
+                        match key {
+                            crossterm::event::KeyCode::Char(c) if c.is_ascii_digit() => {
+                                state.number_buffer.push(c);
+                            }
+                            crossterm::event::KeyCode::Enter => {
+                                let anim_idx = state.number_buffer.parse::<usize>().ok().and_then(|idx| {
+                                    if idx >= 1 && idx <= state.items.len() {
+                                        let target = idx - 1;
+                                        state.filtered_indices.iter().position(|&i| i == target).map(|_| target)
+                                    } else {
+                                        None
+                                    }
+                                });
+                                if let Some(anim_idx) = anim_idx {
+                                    let mut new_anim: Box<dyn Animation> = match anim_idx {
+                                        0 => Box::new(Starfield::new()),
+                                        1 => Box::new(crate::animations::matrix::Matrix::new()),
+                                        2 => Box::new(crate::animations::wave::Wave::new()),
+                                        3 => Box::new(crate::animations::snake::Snake::new()),
+                                        4 => Box::new(crate::animations::fire::Fire::new()),
+                                        5 => Box::new(crate::animations::rain::Rain::new()),
+                                        6 => Box::new(crate::animations::swarm::Swarm::new()),
+                                        7 => Box::new(crate::animations::circuit::Circuit::new()),
+                                        8 => Box::new(crate::animations::void::Void::new()),
+                                        _ => Box::new(Starfield::new()),
+                                    };
+                                    let size = crossterm::terminal::size().unwrap_or((80, 24));
+                                    new_anim.init(size.0, size.1);
+                                    self.mode = AppMode::Running(new_anim);
+                                } else {
+                                    state.number_buffer.clear();
+                                    state.input_mode = InputMode::Normal;
+                                }
+                            }
+                            crossterm::event::KeyCode::Esc => {
+                                state.number_buffer.clear();
+                                state.input_mode = InputMode::Normal;
+                            }
+                            _ => {}
+                        }
+                    }
+                    InputMode::Search => {
+                        match key {
+                            crossterm::event::KeyCode::Char('k') => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = state.selected_index.saturating_sub(1);
+                                }
+                            }
+                            crossterm::event::KeyCode::Char('j') => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = (state.selected_index + 1).min(state.filtered_indices.len().saturating_sub(1));
+                                }
+                            }
+                            crossterm::event::KeyCode::Char(c) => {
+                                state.search_query.push(c);
+                                self.update_filter();
+                            }
+                            crossterm::event::KeyCode::Backspace => {
+                                state.search_query.pop();
+                                self.update_filter();
+                            }
+                            crossterm::event::KeyCode::Up => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = state.selected_index.saturating_sub(1);
+                                }
+                            }
+                            crossterm::event::KeyCode::Down => {
+                                if !state.filtered_indices.is_empty() {
+                                    state.selected_index = (state.selected_index + 1).min(state.filtered_indices.len().saturating_sub(1));
+                                }
+                            }
+                            crossterm::event::KeyCode::Enter => {
+                                self.launch_selected();
+                            }
+                            crossterm::event::KeyCode::Esc => {
+                                state.search_query.clear();
+                                state.filtered_indices = (0..state.items.len()).collect();
+                                state.selected_index = 0;
+                                state.input_mode = InputMode::Normal;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            AppMode::Running(_) => {}
         }
     }
 
     pub fn launch_selected(&mut self) {
-        let selected = match &self.mode {
-            AppMode::Menu { selected } => *selected,
+        let target_idx = match &self.mode {
+            AppMode::Menu(state) => {
+                if state.filtered_indices.is_empty() { return; }
+                state.filtered_indices[state.selected_index]
+            }
             _ => return,
         };
 
-        let mut new_anim: Box<dyn Animation> = match selected {
+        let mut new_anim: Box<dyn Animation> = match target_idx {
             0 => Box::new(Starfield::new()),
             1 => Box::new(crate::animations::matrix::Matrix::new()),
             2 => Box::new(crate::animations::wave::Wave::new()),
@@ -65,11 +235,16 @@ impl App {
             6 => Box::new(crate::animations::swarm::Swarm::new()),
             7 => Box::new(crate::animations::circuit::Circuit::new()),
             8 => Box::new(crate::animations::void::Void::new()),
+            9 => Box::new(crate::animations::flux::Flux::new()),
             _ => Box::new(Starfield::new()),
         };
 
         let size = crossterm::terminal::size().unwrap_or((80, 24));
         new_anim.init(size.0, size.1);
         self.mode = AppMode::Running(new_anim);
+    }
+
+    pub fn return_to_menu(&mut self) {
+        self.mode = AppMode::Menu(MenuState::new());
     }
 }

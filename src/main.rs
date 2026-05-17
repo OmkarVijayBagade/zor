@@ -15,6 +15,7 @@ mod ui;
 mod animations;
 
 use crate::app::App;
+use crate::app::InputMode;
 
 const MENU_LIST_START_ROW: usize = 7;
 
@@ -41,39 +42,43 @@ fn main() -> Result<(), io::Error> {
             match event::read()? {
                 Event::Key(key) => {
                     match &mut app.mode {
-                        crate::app::AppMode::Menu { .. } => {
-                            match key.code {
-                                KeyCode::Char('q') => running = false,
-                                KeyCode::Up | KeyCode::Char('k') => app.select_previous(),
-                                KeyCode::Down | KeyCode::Char('j') => app.select_next(),
-                                KeyCode::Enter => app.launch_selected(),
-                                KeyCode::Char(c) if c >= '1' && c <= '9' => {
-                                    let idx = c.to_digit(10).unwrap() as usize - 1;
-                                    app.select_index(idx);
-                                }
-                                _ => {}
+                        crate::app::AppMode::Menu(state) => {
+                            if state.input_mode == InputMode::Normal && key.code == KeyCode::Char('q') {
+                                running = false;
+                            } else {
+                                app.handle_key(key.code);
                             }
                         }
                         crate::app::AppMode::Running(ref mut anim) => {
                             if !anim.handle_input(Event::Key(key)) {
-                                app.mode = crate::app::AppMode::Menu { selected: 0 };
+                                app.return_to_menu();
                             }
                         }
                     }
                 }
                 Event::Mouse(mouse) => {
-                    if let crate::app::AppMode::Menu { .. } = app.mode {
-                        match mouse.kind {
-                            MouseEventKind::ScrollUp => app.select_previous(),
-                            MouseEventKind::ScrollDown => app.select_next(),
-                            MouseEventKind::Down(_) => {
-                                let row = mouse.row as usize;
-                                let item_index = row.saturating_sub(MENU_LIST_START_ROW);
-                                if item_index < 9 {
-                                    app.select_index(item_index);
+                    if let crate::app::AppMode::Menu(state) = &mut app.mode {
+                        if state.input_mode == InputMode::Normal {
+                            match mouse.kind {
+                                MouseEventKind::ScrollUp => {
+                                    if !state.filtered_indices.is_empty() {
+                                        state.selected_index = state.selected_index.saturating_sub(1);
+                                    }
                                 }
+                                MouseEventKind::ScrollDown => {
+                                    if !state.filtered_indices.is_empty() {
+                                        state.selected_index = (state.selected_index + 1).min(state.filtered_indices.len().saturating_sub(1));
+                                    }
+                                }
+                                MouseEventKind::Down(_) => {
+                                    let row = mouse.row as usize;
+                                    let item_index = row.saturating_sub(MENU_LIST_START_ROW);
+                                    if item_index < state.filtered_indices.len() {
+                                        state.selected_index = item_index;
+                                    }
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
                 }
